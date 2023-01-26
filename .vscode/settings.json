@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "typeinfo": "cpp",
+        "bitset": "cpp",
+        "optional": "cpp",
+        "__split_buffer": "cpp",
+        "string": "cpp",
+        "vector": "cpp",
+        "iosfwd": "cpp"
+    }
+}
