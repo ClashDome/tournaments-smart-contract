@@ -49,7 +49,6 @@ ACTION clashdometrn::addconftoken(
       current_config.supported_tokens_stake.push_back(extended_symbol(token_symbol, token_contract));
    }
    
-
    config.set(current_config, get_self());
 }
 
@@ -60,8 +59,9 @@ ACTION clashdometrn::addconftoken(
 ACTION clashdometrn::createtrn(
    name creator,
    string name,
+   uint64_t game,
    uint64_t timestamp_start, 
-   uint64_t duration_hours,
+   uint64_t timestamp_end, 
    asset requeriment_fee,
    asset requeriment_stake,
    string requeriment_nft,
@@ -73,35 +73,33 @@ ACTION clashdometrn::createtrn(
    // TODO: auth with custom keys
    // internal_use_do_not_use::require_auth2(creator.value, "one"_n.value);
    require_auth(creator);
+   
+   // check timestamps
+   uint64_t current_timestamp = eosio::current_time_point().sec_since_epoch();
 
-   // TODO: comprobar timestamps por si se tiene otro torneo ya en curso
+   check(timestamp_start >= current_timestamp, "The start time must be later than the current time.");
+   check(timestamp_start < timestamp_end, "The end time must be later than the start time.");
 
-   // TODO comprobar si es un creador especial y fee, stake y pot
+   float duration = ((float)timestamp_end - (float)timestamp_start) / 3600.0;
+
+   check(duration >= (float) MIN_DURATION && duration <= (float) MAX_DURATION, "Duration must be between " + to_string(MIN_DURATION) + " and " + to_string(MAX_DURATION) + " hours.");
+
+   // check tournaments in progress
+   checkPendingTournament(creator, timestamp_start, timestamp_end);
 
    // check fee and stake symbols
+   checkFeeAndStake(creator, requeriment_fee, requeriment_stake);
+
+   auto cr_itr = creators.find(creator.value);
+
+   // TODO: comprobar si se tiene permitido stake, nfts y pot
+   if (cr_itr == creators.end()) {
+      
+   } else {
+
+   }
+
    config_s current_config = config.get();
-
-   bool is_fee_supported = false;
-   
-   for (extended_symbol supported_token_fee : current_config.supported_tokens_fee) {
-      if (supported_token_fee.get_symbol() == requeriment_fee.symbol) {
-         is_fee_supported = true;
-         break;
-      }
-   }
-
-   check(is_fee_supported, "The specified stake symbol is not supported");
-
-   bool is_stake_supported = false;
-   
-   for (extended_symbol supported_token_stake : current_config.supported_tokens_stake) {
-      if (supported_token_stake.get_symbol() == requeriment_stake.symbol) {
-         is_stake_supported = true;
-         break;
-      }
-   }
-
-   check(is_stake_supported, "The specified stake symbol is not supported");
 
    uint64_t tournament_id = current_config.tournament_counter++;
    config.set(current_config, get_self());
@@ -110,8 +108,9 @@ ACTION clashdometrn::createtrn(
       trn.tournament_id = tournament_id;
       trn.creator = creator;
       trn.name = name;
+      trn.game = game;
       trn.timestamp_start = timestamp_start;
-      trn.duration_hours = duration_hours;
+      trn.timestamp_end = timestamp_end;
       trn.requeriment_fee = requeriment_fee;
       trn.requeriment_stake = requeriment_stake;
       trn.requeriment_nft = requeriment_nft;
@@ -128,8 +127,9 @@ ACTION clashdometrn::createtrn(
          tournament_id,
          creator,
          name,
+         game,
          timestamp_start,
-         duration_hours,
+         timestamp_end,
          requeriment_fee,
          requeriment_stake,
          requeriment_nft,
@@ -194,8 +194,9 @@ ACTION clashdometrn::logcreatetrn(
    uint64_t tournament_id, 
    name creator,
    string name,
+   uint64_t game,
    uint64_t timestamp_start, 
-   uint64_t duration_hours,
+   uint64_t timestamp_end,
    asset requeriment_fee,
    asset requeriment_stake,
    string requeriment_nft,
@@ -205,4 +206,67 @@ ACTION clashdometrn::logcreatetrn(
 ) {
    
    require_auth(get_self());
+}
+
+// AUXILIAR FUNCTIONS
+void clashdometrn::checkPendingTournament(name creator, uint64_t timestamp_start, uint64_t timestamp_end)
+{
+
+   auto trn_idx = tournaments.get_index<name("bycreator")>();
+   auto trn_itr = trn_idx.lower_bound(creator.value);
+
+   while (trn_itr != trn_idx.end() && trn_itr->creator == creator) {
+      check(trn_itr->timestamp_end < timestamp_start || trn_itr->timestamp_start > timestamp_end, "Two tournaments at same time are not allowed.");
+      trn_itr++;
+   }
+}
+
+
+void clashdometrn::checkFeeAndStake(name creator, asset requeriment_fee, asset requeriment_stake)
+{
+   config_s current_config = config.get();
+
+   bool is_fee_supported = false;
+   
+   for (extended_symbol supported_token_fee : current_config.supported_tokens_fee) {
+      if (supported_token_fee.get_symbol() == requeriment_fee.symbol) {
+         is_fee_supported = true;
+         break;
+      }
+   }
+
+   bool is_stake_supported = false;
+   
+   for (extended_symbol supported_token_stake : current_config.supported_tokens_stake) {
+      if (supported_token_stake.get_symbol() == requeriment_stake.symbol) {
+         is_stake_supported = true;
+         break;
+      }
+   }
+
+   auto cr_itr = creators.find(creator.value);
+
+   if (cr_itr != creators.end()) {
+
+      if (!is_fee_supported) {
+         for (extended_symbol supported_token_fee : cr_itr->supported_tokens_fee) {
+            if (supported_token_fee.get_symbol() == requeriment_fee.symbol) {
+               is_fee_supported = true;
+               break;
+            }
+         }
+      }
+
+      if (!is_stake_supported) {
+         for (extended_symbol supported_token_stake : cr_itr->supported_tokens_stake) {
+            if (supported_token_stake.get_symbol() == requeriment_stake.symbol) {
+               is_stake_supported = true;
+               break;
+            }
+         }
+      }
+   }
+
+   check(is_fee_supported, "The specified stake symbol is not supported");
+   check(is_stake_supported, "The specified stake symbol is not supported");
 }
