@@ -160,4 +160,8 @@ CONTRACT clashdometrn : public contract {
 
       // games
       enum GameType {CANDY_FIESTA = 1, TEMPLOK, RINGY_DINGY, ENDLESS_SIEGE_2, RUG_POOL, PAC_MAN};
+
+      // prize pots
+      const string POT_MINIMUM = "MINIMUM";
+      const string POT_BONUS = "BONUS";
 };

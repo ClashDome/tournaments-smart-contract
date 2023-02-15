@@ -90,13 +90,21 @@ ACTION clashdometrn::createtrn(
    // check fee and stake symbols
    checkFeeAndStake(creator, requeriment_fee, requeriment_stake);
 
+   // check prizepot
+   check(requeriment_fee.amount == 0 || requeriment_fee.symbol == prize_pot.symbol, "Entry fee and prize pot symbols are different");
+   check(requeriment_fee.amount == 0 || type_prize_pot == POT_MINIMUM || type_prize_pot == POT_BONUS, "Invalid prize pot type.");
+
    auto cr_itr = creators.find(creator.value);
 
-   // TODO: comprobar si se tiene permitido stake, nfts y pot
+   // check requeriment stake, nfts y pot
    if (cr_itr == creators.end()) {
-      
+      check(requeriment_stake.amount == 0, "Requeriment stake is not allowed.");
+      check(prize_pot.amount == 0, "Prize pot is not allowed.");
+      check(requeriment_nft == "", "Requeriment NFT is not allowed.");
    } else {
-
+      check(cr_itr->stake_available || requeriment_stake.amount == 0, "Requeriment stake is not allowed.");
+      check(cr_itr->pot_available || prize_pot.amount == 0, "Prize pot is not allowed.");
+      check(cr_itr->nft_available || requeriment_nft == "", "Requeriment NFT is not allowed.");
    }
 
    config_s current_config = config.get();
