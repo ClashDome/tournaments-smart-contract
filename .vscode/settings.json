@@ -13,6 +13,16 @@
         "array": "cpp",
         "initializer_list": "cpp",
         "string_view": "cpp",
-        "unordered_map": "cpp"
+        "unordered_map": "cpp",
+        "__tuple": "cpp",
+        "compare": "cpp",
+        "cstddef": "cpp",
+        "type_traits": "cpp",
+        "limits": "cpp",
+        "ratio": "cpp",
+        "tuple": "cpp",
+        "variant": "cpp",
+        "__locale": "cpp",
+        "locale": "cpp"
     }
 }

@@ -41,9 +41,36 @@ CONTRACT clashdometrn : public contract {
          bool recreate
       );
 
+      ACTION edittrn(
+         uint64_t id,
+         name creator,
+         string name,
+         uint64_t game,
+         uint64_t timestamp_start, 
+         uint64_t timestamp_end,
+         asset requeriment_fee,
+         asset requeriment_stake,
+         string requeriment_nft,
+         asset prize_pot,
+         string type_prize_pot,
+         bool recreate
+      );
+
       ACTION canceltrn(
          name creator,
          uint64_t tournament_id
+      );
+
+      ACTION fcanceltrn(
+         name creator,
+         uint64_t tournament_id
+      );
+
+      ACTION rmusertrn(
+         name creator,
+         name account,
+         uint64_t tournament_id,
+         string type
       );
 
       ACTION addcreator(
@@ -54,6 +81,15 @@ CONTRACT clashdometrn : public contract {
          vector <extended_symbol> supported_tokens_stake,
          bool nft_available,
          bool pot_available
+      );
+
+      ACTION rmcreator(
+         name creator
+      );
+
+      ACTION addtrnfunds(
+         asset quantity,
+         name contract
       );
 
       ACTION logcreatetrn(
@@ -69,6 +105,13 @@ CONTRACT clashdometrn : public contract {
          asset prize_pot,
          string type_prize_pot,
          bool recreate
+      );
+
+      [[eosio::on_notify("*::transfer")]] void receive_transfer(
+        name from,
+        name to,
+        asset quantity,
+        string memo
       );
 
    private:
@@ -93,10 +136,12 @@ CONTRACT clashdometrn : public contract {
 
          uint64_t primary_key() const { return tournament_id; }
          uint64_t by_creator() const { return creator.value; }
+         uint64_t by_start_time() const { return timestamp_start; }
       };
 
       typedef multi_index<name("tournaments"), tournaments_s,
-         indexed_by < name("bycreator"), const_mem_fun < tournaments_s, uint64_t, &tournaments_s::by_creator>>> 
+         indexed_by < name("bycreator"), const_mem_fun < tournaments_s, uint64_t, &tournaments_s::by_creator>>,
+         indexed_by < name("bystarttime"), const_mem_fun < tournaments_s, uint64_t, &tournaments_s::by_start_time>>> 
       tournaments_t;
     
       tournaments_t tournaments = tournaments_t(get_self(), get_self().value);
@@ -111,6 +156,7 @@ CONTRACT clashdometrn : public contract {
          vector <extended_symbol> supported_tokens_stake;
          bool nft_available;
          bool pot_available;
+         vector <asset> funds;
 
          uint64_t primary_key() const { return creator.value; }
       };
@@ -118,6 +164,22 @@ CONTRACT clashdometrn : public contract {
       typedef multi_index<name("creators"), creators_s> creators_t;
     
       creators_t creators = creators_t(get_self(), get_self().value);
+
+      // checks
+      TABLE checks_s {
+        
+         name creator;
+         name account;
+         uint64_t tournament_id;
+         uint64_t timestamp;
+         string type;
+
+         uint64_t primary_key() const { return creator.value; }
+      };
+
+      typedef multi_index<name("checks"), checks_s> checks_t;
+    
+      checks_t checks = checks_t(get_self(), get_self().value);
 
       // config
       TABLE config_s {
@@ -135,7 +197,8 @@ CONTRACT clashdometrn : public contract {
       void checkPendingTournament(
          name creator, 
          uint64_t timestamp_start, 
-         uint64_t timestamp_end
+         uint64_t timestamp_end,
+         uint64_t game
       );
 
       void checkFeeAndStake(
