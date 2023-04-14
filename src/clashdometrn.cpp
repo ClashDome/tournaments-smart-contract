@@ -458,6 +458,15 @@ ACTION clashdometrn::logcreatetrn(
 }
 
 // NOTIFY
+void clashdometrn::receive_nft(
+   name from,
+   name to,
+   vector <uint64_t> asset_ids,
+   string memo
+) {
+   return;
+}
+
 void clashdometrn::receive_transfer(
    name from,
    name to,
@@ -465,17 +474,13 @@ void clashdometrn::receive_transfer(
    string memo
 ) {
 
-   if (to != get_self()) {
+   if (to != get_self() || memo == "add-tokens") {
       return;
    }
-
-   check(memo == "add-funds", "Memo has to be 'add-funds'.");
 
    name contract = get_first_receiver();
 
-   if (contract == name("atomicassets")) {
-      return;
-   }
+   check(memo == "add-funds", "Memo has to be 'add-funds'.");
 
    auto cr_itr = creators.find(from.value);
 

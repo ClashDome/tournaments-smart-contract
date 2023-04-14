@@ -107,6 +107,13 @@ CONTRACT clashdometrn : public contract {
          bool recreate
       );
 
+      [[eosio::on_notify("atomicassets::transfer")]] void receive_nft(
+        name from,
+        name to,
+        vector <uint64_t> asset_ids,
+        string memo
+      );
+
       [[eosio::on_notify("*::transfer")]] void receive_transfer(
         name from,
         name to,
