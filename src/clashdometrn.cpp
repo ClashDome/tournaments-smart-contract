@@ -364,6 +364,27 @@ ACTION clashdometrn::addcreator(
 }
 
 /**
+*  Edit a creator img
+*  @required_auth self
+*/
+ACTION clashdometrn::editcrimg(
+         name creator,
+         string img
+      )
+{
+   require_auth(creator);
+
+   auto cr_itr = creators.find(creator.value);
+
+   check(cr_itr != creators.end(), "Creator " + creator.to_string() + " doesn't exists.");
+
+   creators.modify(cr_itr, CONTRACTN, [&](auto& cr) {
+      cr.img = img;
+   });
+
+}
+
+/**
 *  Removes a special creator
 *  @required_auth self
 */

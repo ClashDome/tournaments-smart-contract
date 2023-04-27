@@ -83,6 +83,11 @@ CONTRACT clashdometrn : public contract {
          bool pot_available
       );
 
+      ACTION editcrimg(
+         name creator,
+         string img
+      );
+
       ACTION rmcreator(
          name creator
       );
